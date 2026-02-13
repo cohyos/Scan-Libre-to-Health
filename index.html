@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Libre → Health">
+    <meta name="theme-color" content="#007AFF">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <title>Libre → Health</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Libre → Health</h1>
+        <p class="subtitle">ייבוא נתוני סוכר מ-LibreView לאפליקציית הבריאות</p>
+    </header>
+
+    <main>
+        <!-- Step 1: LibreView Export -->
+        <section class="step" id="step1">
+            <div class="step-header">
+                <span class="step-number">1</span>
+                <h2>ייצוא נתונים מ-LibreView</h2>
+            </div>
+            <div class="step-content">
+                <p>היכנסו לאתר LibreView וייצאו דוח נתוני סוכר עבור 18 חודשים אחרונים:</p>
+                <ol class="instructions">
+                    <li>לחצו על הכפתור למטה לפתיחת LibreView</li>
+                    <li>התחברו לחשבון שלכם</li>
+                    <li>עברו לאזור הדוחות / יצוא נתונים</li>
+                    <li>בחרו טווח של 18 חודשים</li>
+                    <li>הורידו את הנתונים כקובץ CSV</li>
+                </ol>
+                <a href="https://www.libreview.com/" target="_blank" rel="noopener" class="btn btn-primary">
+                    פתיחת LibreView
+                    <span class="btn-icon">&#8599;</span>
+                </a>
+            </div>
+        </section>
+
+        <!-- Step 2: Upload CSV -->
+        <section class="step" id="step2">
+            <div class="step-header">
+                <span class="step-number">2</span>
+                <h2>העלאת קובץ הנתונים</h2>
+            </div>
+            <div class="step-content">
+                <div class="file-upload" id="fileUploadArea">
+                    <input type="file" id="csvFile" accept=".csv,.txt" />
+                    <label for="csvFile">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <span class="upload-text">בחרו קובץ CSV או גררו לכאן</span>
+                        <span class="upload-hint">קובץ שיוצא מ-LibreView</span>
+                    </label>
+                </div>
+
+                <div class="format-select hidden" id="formatSelect">
+                    <label for="dateFormat">פורמט תאריכים בקובץ:</label>
+                    <select id="dateFormat">
+                        <option value="dd-mm-yyyy">יום-חודש-שנה (DD-MM-YYYY)</option>
+                        <option value="auto">זיהוי אוטומטי</option>
+                        <option value="mm-dd-yyyy">חודש-יום-שנה (MM-DD-YYYY)</option>
+                        <option value="yyyy-mm-dd">שנה-חודש-יום (YYYY-MM-DD)</option>
+                    </select>
+                </div>
+
+                <div id="fileInfo" class="file-info hidden"></div>
+            </div>
+        </section>
+
+        <!-- Step 3: Date Range -->
+        <section class="step hidden" id="step3">
+            <div class="step-header">
+                <span class="step-number">3</span>
+                <h2>בחירת טווח תאריכים</h2>
+            </div>
+            <div class="step-content">
+                <p>בחרו את טווח התאריכים לסינון הנתונים:</p>
+                <div class="date-inputs">
+                    <div class="date-field">
+                        <label for="dateFrom">מתאריך:</label>
+                        <input type="date" id="dateFrom" />
+                    </div>
+                    <div class="date-field">
+                        <label for="dateTo">עד תאריך:</label>
+                        <input type="date" id="dateTo" />
+                    </div>
+                </div>
+                <button class="btn btn-primary" id="processBtn">
+                    עיבוד הנתונים
+                </button>
+            </div>
+        </section>
+
+        <!-- Step 4: Results -->
+        <section class="step hidden" id="step4">
+            <div class="step-header">
+                <span class="step-number">4</span>
+                <h2>תוצאות</h2>
+            </div>
+            <div class="step-content">
+                <div id="stats" class="stats"></div>
+                <div id="preview" class="preview"></div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="downloadBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        הורדת קובץ מעובד
+                    </button>
+                    <button class="btn btn-health" id="healthBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                        </svg>
+                        העברה לאפליקציית הבריאות
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 5: Apple Health Shortcut -->
+        <section class="step hidden" id="step5">
+            <div class="step-header">
+                <span class="step-number">5</span>
+                <h2>ייבוא לאפליקציית הבריאות</h2>
+            </div>
+            <div class="step-content">
+                <div class="health-status" id="healthStatus">
+                    <p>הנתונים הועתקו ללוח. כעת הפעילו את קיצור הדרך באייפון:</p>
+                </div>
+
+                <a href="#" id="shortcutBtn" class="btn btn-health btn-large">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <path d="M12 8v8M8 12h8"/>
+                    </svg>
+                    הפעלת קיצור הדרך
+                </a>
+
+                <details class="shortcut-guide">
+                    <summary>איך ליצור את קיצור הדרך? (פעם ראשונה בלבד)</summary>
+                    <div class="guide-content">
+                        <p>יש ליצור קיצור דרך חדש באפליקציית <strong>קיצורים (Shortcuts)</strong> של אפל עם הפעולות הבאות:</p>
+                        <ol>
+                            <li>פתחו את אפליקציית <strong>קיצורים</strong> באייפון</li>
+                            <li>לחצו על <strong>+</strong> ליצירת קיצור חדש</li>
+                            <li>תנו לו את השם: <code>ייבוא סוכר לבריאות</code></li>
+                            <li>הוסיפו את הפעולות הבאות לפי הסדר:</li>
+                        </ol>
+
+                        <div class="shortcut-steps">
+                            <div class="shortcut-step">
+                                <span class="shortcut-step-num">א</span>
+                                <div>
+                                    <strong>Get Clipboard</strong>
+                                    <p>קבלת תוכן הלוח</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step">
+                                <span class="shortcut-step-num">ב</span>
+                                <div>
+                                    <strong>Split Text</strong>
+                                    <p>פיצול טקסט לפי <code>New Line</code> (שורה חדשה)</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step">
+                                <span class="shortcut-step-num">ג</span>
+                                <div>
+                                    <strong>Repeat with Each</strong>
+                                    <p>חזרה על כל שורה</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step nested">
+                                <span class="shortcut-step-num">ד</span>
+                                <div>
+                                    <strong>Split Text</strong>
+                                    <p>פיצול לפי <code>,</code> (פסיק)</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step nested">
+                                <span class="shortcut-step-num">ה</span>
+                                <div>
+                                    <strong>Get Item from List</strong>
+                                    <p>קבלת פריט מספר <code>1</code> → זהו התאריך</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step nested">
+                                <span class="shortcut-step-num">ו</span>
+                                <div>
+                                    <strong>Set Variable</strong>
+                                    <p>שמירה במשתנה בשם <code>reading_date</code></p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step nested">
+                                <span class="shortcut-step-num">ז</span>
+                                <div>
+                                    <strong>Get Item from List</strong>
+                                    <p>קבלת פריט מספר <code>2</code> מהפיצול → זהו ערך הסוכר</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step nested">
+                                <span class="shortcut-step-num">ח</span>
+                                <div>
+                                    <strong>Log Health Sample</strong>
+                                    <p>סוג: <code>Blood Glucose</code><br>
+                                    ערך: הפריט מפעולה ז<br>
+                                    יחידה: <code>mg/dL</code><br>
+                                    תאריך: המשתנה <code>reading_date</code></p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step">
+                                <span class="shortcut-step-num">ט</span>
+                                <div>
+                                    <strong>End Repeat</strong>
+                                    <p>סוף לולאה</p>
+                                </div>
+                            </div>
+                            <div class="shortcut-step">
+                                <span class="shortcut-step-num">י</span>
+                                <div>
+                                    <strong>Show Alert</strong>
+                                    <p>הצגת הודעה: <code>הנתונים יובאו בהצלחה!</code></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="note">
+                            <strong>שימו לב:</strong> בפעם הראשונה, קיצור הדרך יבקש הרשאה לכתוב נתוני סוכר לאפליקציית הבריאות. יש לאשר.
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Libre → Health | כלי עזר לייבוא נתוני סוכר</p>
+        <p class="footer-note">אפליקציה זו אינה קשורה לחברת Abbott או ל-LibreView</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
