@@ -391,11 +391,12 @@
             filtered[i] = row;
         }
 
-        // Keep only rows that have a glucose value in colHistoric after the merge
+        // Keep only rows that have a numeric glucose value in colHistoric after the merge
+        // This also filters out any stray header/unit rows that leaked into the data
         var withGlucose = [];
         for (var i = 0; i < filtered.length; i++) {
             var val = filtered[i][colHistoric] ? filtered[i][colHistoric].trim() : '';
-            if (val !== '') {
+            if (val !== '' && !isNaN(parseFloat(val))) {
                 withGlucose.push(filtered[i]);
             }
         }
