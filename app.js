@@ -499,7 +499,7 @@
     function downloadProcessed() {
         if (processedRows.length === 0) return;
 
-        var csvContent = headerRow.join(delimiter) + '\n';
+        var csvContent = '';
         for (var i = 0; i < processedRows.length; i++) {
             var row = processedRows[i];
             var fields = [];
